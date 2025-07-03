@@ -1,0 +1,167 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.3'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'jacoco'
+}
+
+group = 'com.me.ssu'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven { url "https://repo.spring.io/milestone" }
+    maven { url "https://repo.spring.io/snapshot" }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+dependencyManagement {
+    imports {
+        mavenBom 'org.springframework.cloud:spring-cloud-dependencies:2024.0.0'
+    }
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+//    implementation 'org.springframework.boot:spring-boot-starter-security'
+//    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+//    implementation 'org.springframework.security:spring-security-oauth2-resource-server'
+//    implementation 'org.springframework.security:spring-security-oauth2-jose'
+
+    // JUnit 5
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.mockito:mockito-inline:5.2.0'
+//    testImplementation 'org.springframework.cloud:spring-cloud-contract-wiremock'
+//    implementation group: 'com.c4-soft.springaddons', name: 'spring-addons-oauth2-test', version: '5.4.2'
+//    testImplementation 'org.springframework.security:spring-security-test'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+    testImplementation 'org.projectlombok:lombok:1.18.30'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.30'
+
+    // Feign client
+//    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+//    implementation 'io.github.openfeign:feign-okhttp'
+//    implementation 'io.github.openfeign:feign-gson'
+
+    // Swagger 3
+    implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.8.5'
+
+    // JDBC (h2)
+    implementation 'com.h2database:h2'
+
+    // JDBC (mysql)
+    implementation 'com.mysql:mysql-connector-j:9.2.0'
+
+    // Apache Utils
+//    implementation group: 'commons-io', name: 'commons-io', version: '2.14.0'
+//    implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13'
+//    implementation 'org.apache.commons:commons-collections4:4.5.0-M3'
+
+    // Querydsl
+    implementation 'com.querydsl:querydsl-jpa:5.1.0:jakarta'
+    annotationProcessor 'com.querydsl:querydsl-apt:5.1.0:jakarta'
+    annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
+    annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+    testImplementation 'org.projectlombok:lombok:1.18.30'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.30'
+
+    // Jwt
+//    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+//    implementation 'io.jsonwebtoken:jjwt-impl:0.11.5'
+//    implementation 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
+    // Query Log
+    implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.9.0'
+
+    // 기타
+//    implementation 'com.google.guava:guava:33.2.1-jre'
+//    implementation 'com.github.ulisesbocchio:jasypt-spring-boot-starter:3.0.5'
+//    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    // 모니터링 및 로그 전송
+//    implementation 'io.micrometer:micrometer-registry-prometheus:1.14.5'
+//    implementation 'com.github.loki4j:loki-logback-appender:1.6.0'
+
+    // Image Resize
+//    implementation group: 'org.imgscalr', name: 'imgscalr-lib', version: '4.2'
+//    implementation group: 'com.drewnoakes', name: 'metadata-extractor', version: '2.18.0'
+
+    //pem
+//    implementation group: 'org.bouncycastle', name: 'bcpkix-jdk18on', version: '1.80'
+}
+
+configurations.configureEach {
+    exclude group: 'commons-logging', module: 'commons-logging'
+}
+
+test {
+    useJUnitPlatform()
+    finalizedBy 'jacocoTestReport'
+}
+
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        csv.required = false
+        xml.outputLocation = layout.buildDirectory.file('reports/jacoco/xml/jacocoTestReport.xml')
+        html.outputLocation = layout.buildDirectory.dir('reports/jacoco/html')
+    }
+
+    def qDomains = []
+    for (qPattern in '**/QA'..'**/QZ') {
+        qDomains.add(qPattern + '*')
+    }
+
+    afterEvaluate {
+        classDirectories.setFrom(
+                files(classDirectories.files.collect {
+                    fileTree(dir: it, excludes: [
+                            "**/global/*",
+                            "**/base/*",
+                            "**/Application*",
+                    ] + qDomains)
+                })
+        )
+    }
+}
+
+jar {
+    enabled = false
+}
+
+tasks.withType(Test).configureEach {
+    jvmArgs '-XX:+EnableDynamicAgentLoading'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs << "-Xlint:deprecation"
+}
