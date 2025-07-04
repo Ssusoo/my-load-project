@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    master:
+      jdbc-url: jdbc:h2:mem:test
+      username: sa
+      driver-class-name: org.h2.Driver
+    slave: # local 환경이므로 master 와 동일하게 구성
+      jdbc-url: jdbc:h2:mem:test
+      username: sa
+      driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      # 서버 시작시 테이블 자동 생성
+      ddl-auto: create
+    # Hibernate가 H2 DB전용 SQL 문법으로 실행
+    database-platform: org.hibernate.dialect.H2Dialect
+    # 초기화 스크립트 실행을 JPA 초기화 이후로 지연
+    defer-datasource-initialization: true
+  sql:
+    # 테스트시 데이터 자동 세팅
+    init:
+      mode: always
+  h2:
+    console: #h2-console
+      # 웹 콘솔에서 열수 있게 설정
+      enabled: true
+      path: /h2-console
