@@ -88,14 +88,6 @@ public class GlobalExceptionHandler {
 	}
 
 	/**
-	 * 유효성 검사 : UnChecked Exception(비검사 예외) : 복구가 불가능한 예외 처리
-	 */
-	@ExceptionHandler({ BusinessRuntimeException.class})
-	protected ResponseEntity<ErrorResponse> handleBusinessException(final BusinessRuntimeException ex) {
-		return setResponse(ErrorResponse.of(ex.getErrorCode(), ex.getErrorMessage(), ex.getViolations()));
-	}
-
-	/**
 	 * 인증(Authentication) 관련
 	 */
 	/**
@@ -170,6 +162,18 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(NoHandlerFoundException.class)
 	protected ResponseEntity<ErrorResponse> handleNoHandlerFoundException() {
 		return setResponse(ErrorResponse.of(ApiResponseCode.NOT_FOUND));
+	}
+
+	/**
+	 * 비즈니스 로직 요청 오류 관련 : 기존 예외처리 말고 커스텀 비즈니스 오류 요청 처리
+	 */
+	@ExceptionHandler({ BusinessRuntimeException.class})
+	protected ResponseEntity<ErrorResponse> handleBusinessException(final BusinessRuntimeException ex) {
+		return setResponse(ErrorResponse.of(
+				ex.getErrorCode(),      // 에러 코드
+				ex.getErrorMessage(),   // 에러 메시지
+				ex.getViolations())     // 상세한 오류 정보
+		);
 	}
 
 	/**
