@@ -4,7 +4,10 @@ import com.me.ssu.myloadproject.global.constant.ActiveProfile;
 import com.me.ssu.myloadproject.global.constant.ApiResponseCode;
 import com.me.ssu.myloadproject.global.dto.ErrorResponse;
 import com.me.ssu.myloadproject.global.error.exception.BusinessRuntimeException;
+import com.me.ssu.myloadproject.global.util.ConverterUtil;
+import com.me.ssu.myloadproject.global.util.HttpUtils;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -194,6 +197,44 @@ public class GlobalExceptionHandler {
 	protected ResponseEntity<ErrorResponse> handleServletException(ServletException ex) {
 		log.error("handleServletException");
 		return setResponse(ErrorResponse.of(ex));
+	}
+
+	/**
+	 * 모든 예외(Exception) 요청 처리 : 앞서 정의한 예외에서도 못 잡은 경우
+	 *  1) 모든 예외 잡기
+	 *  2) 요청 정보 로깅(loggingRequestInfo)
+	 *  3) 예외 메시지와 스택트레이스 출력
+	 *  4) 클라이언트에게 일관한 에러 응답 제공
+ 	 */
+	@ExceptionHandler(Exception.class)
+	protected ResponseEntity<ErrorResponse> handleException(Exception ex) {
+		loggingRequestInfo(); // 요청정보(헤더, body 등등) 로그 출력
+		log.error("handleException", ex);
+		return setResponse(ErrorResponse.of(ex));
+	}
+
+	/**
+	 *
+	 */
+	private void loggingRequestInfo() {
+		try {
+			HttpServletRequest request = HttpUtils.getHttpServletRequest();
+			assert request != null;
+			Map<String, Object> requestBody = ConverterUtil.convertJsonToMap(HttpUtils.getRequestBody(request));
+			log.debug("requestInfo: {}", ConverterUtil.convertObjectToMap(
+					new RequestLogging(
+							request.getMethod(),
+							request.getRequestURI(),
+							HttpUtils.getHeaderToMap(request),
+							request.getQueryString(),
+							requestBody == null || requestBody.isEmpty() ? null : requestBody,
+							HttpUtils.getRefererURL(request)
+					)
+			));
+
+		} catch (Exception ignored) {
+			// do nothing
+		}
 	}
 
 	/**
