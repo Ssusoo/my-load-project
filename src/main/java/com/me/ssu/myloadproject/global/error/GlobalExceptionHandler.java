@@ -223,12 +223,13 @@ public class GlobalExceptionHandler {
 			Map<String, Object> requestBody = ConverterUtil.convertJsonToMap(HttpUtils.getRequestBody(request));
 			log.debug("requestInfo: {}", ConverterUtil.convertObjectToMap(
 					new RequestLogging(
-							request.getMethod(),
-							request.getRequestURI(),
-							HttpUtils.getHeaderToMap(request),
-							request.getQueryString(),
-							requestBody == null || requestBody.isEmpty() ? null : requestBody,
-							HttpUtils.getRefererURL(request)
+							request.getMethod(),                                                    // POST, GET, PUT, DELETE
+							request.getRequestURI(),                                                // URL 경로
+							HttpUtils.getHeaderToMap(request),                                      // 요청 헤더(Authorization, Content-Type, User-Agent)
+							request.getQueryString(),                                               // URL 뒤에 붙는 파라미터(?page=2&sort=name)
+							requestBody == null || requestBody.isEmpty() ? null : requestBody,      // 요청 본문
+							HttpUtils.getRefererURL(request)                                        // Referer 헤더 값 추출(https://example.com/main)
+																									// 어디서 넘어왔는지
 					)
 			));
 
