@@ -18,10 +18,13 @@ import org.springframework.security.authentication.InsufficientAuthenticationExc
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.util.Map;
 
@@ -136,6 +139,41 @@ public class GlobalExceptionHandler {
 		return setResponse(ErrorResponse.of(ApiResponseCode.ACCESS_DENIED));
 	}
 
+	/**
+	 * HTTP 요청 오류 관련 : POST / GET / PUT / DELETE
+	 *  Post 요청인데, Get 요청으로 잘못 보낸 경우
+	 */
+	@ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+	protected ResponseEntity<ErrorResponse> handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException ex) {
+		return setResponse(ErrorResponse.of(ApiResponseCode.METHOD_NOT_ALLOWED));
+	}
+
+	/**
+	 * HTTP 요청 오류 관련 : 예상 밖의 요청으로 응답 받을 때
+	 *  ex) application/json(Json 요청을 기대했으나) -> text/xml, text/plain(다른 요청일 경우)
+	 */
+	/**
+	 * {
+	 *   "code": "UNSUPPORTED_MEDIA_TYPE",
+	 *   "message": "지원하지 않는 Content-Type 입니다."
+	 * }
+	 */
+	@ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+	protected ResponseEntity<ErrorResponse> handleHttpMediaTypeNotSupportedException() {
+		return setResponse(ErrorResponse.of(ApiResponseCode.UNSUPPORTED_MEDIA_TYPE));
+	}
+
+	/**
+	 * HTTP 요청 오류 관련 : URL에 대앙하는 핸들러(메서드)가 없을 때
+	 *  해당 URL을 처리하는 컨트롤러가 없을 경우
+	 */
+	@ExceptionHandler(NoHandlerFoundException.class)
+	protected ResponseEntity<ErrorResponse> handleNoHandlerFoundException() {
+		return setResponse(ErrorResponse.of(ApiResponseCode.NOT_FOUND));
+	}
+
+	/**
+	 */
 	private ResponseEntity<ErrorResponse> setResponse(ErrorResponse errorResponse) {
 		for (String profileName : environment.getActiveProfiles()) {
 			if (ActiveProfile.PROD.equals(profileName)) {
