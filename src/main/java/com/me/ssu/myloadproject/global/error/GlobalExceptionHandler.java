@@ -4,6 +4,7 @@ import com.me.ssu.myloadproject.global.constant.ActiveProfile;
 import com.me.ssu.myloadproject.global.constant.ApiResponseCode;
 import com.me.ssu.myloadproject.global.dto.ErrorResponse;
 import com.me.ssu.myloadproject.global.error.exception.BusinessRuntimeException;
+import jakarta.servlet.ServletException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -174,6 +175,14 @@ public class GlobalExceptionHandler {
 				ex.getErrorMessage(),   // 에러 메시지
 				ex.getViolations())     // 상세한 오류 정보
 		);
+	}
+
+	/**
+	 * 잘못된 인자(입력값) 요청 오류 관련 : 잘못된 인자값을 받은 경우
+	 */
+	@ExceptionHandler(IllegalArgumentException.class)
+	protected ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
+		return setResponse(ErrorResponse.of(ApiResponseCode.BAD_REQUEST, ex.getMessage()));
 	}
 
 	/**
