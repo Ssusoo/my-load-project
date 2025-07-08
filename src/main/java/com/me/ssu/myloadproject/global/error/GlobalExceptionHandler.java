@@ -12,6 +12,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageConversionException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -85,6 +90,50 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler({ BusinessRuntimeException.class})
 	protected ResponseEntity<ErrorResponse> handleBusinessException(final BusinessRuntimeException ex) {
 		return setResponse(ErrorResponse.of(ex.getErrorCode(), ex.getErrorMessage(), ex.getViolations()));
+	}
+
+	/**
+	 * 인증(Authentication) 관련
+	 */
+	/**
+	 * {
+	 *   "code": "LOGIN_FAILURE",
+	 *   "message": "아이디 또는 비밀번호가 올바르지 않습니다."
+	 * }
+	 */
+	/**
+	 * {
+	 *   "code": "UNAUTHORIZED",
+	 *   "message": "인증이 필요한 요청입니다."
+	 * }
+	 */
+	@ExceptionHandler({
+			InsufficientAuthenticationException.class,      // 인증 정보 부족(ex : 로그인 안 하고 접근한 경우)
+			BadCredentialsException.class,                  // 잘못된 아이디 / 패스워드
+			InternalAuthenticationServiceException.class,   // 로그인 시 내부 서비스 오류(ex : 유저 조회 실패)
+			AuthenticationException.class })                // 인증 관련 기본 예외(위 예외들의 부모)
+	protected ResponseEntity<ErrorResponse> handleUnAuthenticationException(AuthenticationException ex) {
+		var errorCode = ApiResponseCode.UNAUTHORIZED; // 기본 401
+		if (ex instanceof InternalAuthenticationServiceException || ex instanceof BadCredentialsException) {
+			errorCode = ApiResponseCode.LOGIN_FAILURE; // 로그인 실패로 세분화 처리
+		}
+		return setResponse(ErrorResponse.of(errorCode));
+	}
+
+	/**
+	 * 인가(Authorization) 관련 : 사용자가 로그인해도 권한이 없는 경우
+	 *  1) 일반 사용자가 어드민 권한이 필요한 URL 접근할 때
+	 *  2) 로그인은 했으나 리소스에 접근할 권한이 없을 때
+	 */
+	/**
+	 * {
+	 *   "code": "ACCESS_DENIED",
+	 *   "message": "접근 권한이 없습니다."
+	 * }
+	 */
+	@ExceptionHandler(AccessDeniedException.class)
+	protected ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException ex) {
+		return setResponse(ErrorResponse.of(ApiResponseCode.ACCESS_DENIED));
 	}
 
 	private ResponseEntity<ErrorResponse> setResponse(ErrorResponse errorResponse) {
