@@ -186,6 +186,17 @@ public class GlobalExceptionHandler {
 	}
 
 	/**
+	 * 서블릿 요청 오류 관련 : 서블릿 처리 중 예외가 발생했을 때
+	 *  1) 필터에서 던진 예외, 2) 인터셉터에서 처리 중 예외 발생
+	 *  3) 인증/인가 처리 중 내부 서블릿 에러, 4) 포워드 디스패치 에러
+	 */
+	@ExceptionHandler(ServletException.class)
+	protected ResponseEntity<ErrorResponse> handleServletException(ServletException ex) {
+		log.error("handleServletException");
+		return setResponse(ErrorResponse.of(ex));
+	}
+
+	/**
 	 */
 	private ResponseEntity<ErrorResponse> setResponse(ErrorResponse errorResponse) {
 		for (String profileName : environment.getActiveProfiles()) {
